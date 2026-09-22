@@ -11,6 +11,14 @@ function generateAvatar(initial, bgColor = '#1890ff') {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
+// 日期时间格式化（预约模块使用，进行中的记录相对当前时间生成，保证演示时状态一致）
+function formatDateTime(date) {
+  const pad = n => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+const hoursAgo = h => formatDateTime(new Date(Date.now() - h * 3600 * 1000))
+const daysFromNow = d => formatDateTime(new Date(Date.now() + d * 86400 * 1000))
+
 // ========================================
 // 图书分类数据
 // ========================================
@@ -65,7 +73,7 @@ export const books = [
     categoryName: '科技工程',
     price: 129.00,
     total: 8,
-    available: 3,
+    available: 0,
     location: 'B区-02-15',
     cover: jsCover,
     description: '前端开发经典著作，全面深入地介绍JavaScript语言。'
@@ -336,6 +344,133 @@ export const borrowRecords = [
     returnDate: null,
     status: 'borrowed',
     renewCount: 0
+  }
+]
+
+// ========================================
+// 预约记录数据
+// 状态机：waiting(排队中) → notified(待取书) → fulfilled(已到馆)
+//         waiting/notified → cancelled(已取消) / notified → expired(已过期)
+// ========================================
+export const reservations = [
+  {
+    id: 1,
+    readerId: 2,
+    readerName: '李四',
+    cardNo: 'R202301002',
+    bookId: 1,
+    bookTitle: '红楼梦',
+    isbn: '978-7-02-008179-4',
+    status: 'fulfilled',
+    createdAt: '2024-01-02 09:12:00',
+    notifiedAt: '2024-01-03 10:00:00',
+    expireAt: '2024-01-06 10:00:00',
+    finishedAt: '2024-01-05 14:20:00'
+  },
+  {
+    id: 2,
+    readerId: 4,
+    readerName: '赵六',
+    cardNo: 'R202301004',
+    bookId: 3,
+    bookTitle: '三国演义',
+    isbn: '978-7-02-010875-0',
+    status: 'expired',
+    createdAt: '2024-01-18 15:40:00',
+    notifiedAt: '2024-01-19 09:00:00',
+    expireAt: '2024-01-22 09:00:00',
+    finishedAt: '2024-01-22 09:00:00'
+  },
+  {
+    // 已通知待取书：对应通知记录 id 3（发送失败，可在通知记录中重试）
+    id: 3,
+    readerId: 5,
+    readerName: '钱七',
+    cardNo: 'R202301005',
+    bookId: 4,
+    bookTitle: 'Vue.js设计与实现',
+    isbn: '978-7-115-52808-3',
+    status: 'notified',
+    createdAt: hoursAgo(30),
+    notifiedAt: hoursAgo(20),
+    expireAt: daysFromNow(2),
+    finishedAt: null
+  },
+  {
+    id: 4,
+    readerId: 3,
+    readerName: '王五',
+    cardNo: 'R202301003',
+    bookId: 2,
+    bookTitle: 'JavaScript高级程序设计',
+    isbn: '978-7-111-40701-0',
+    status: 'waiting',
+    createdAt: hoursAgo(5),
+    notifiedAt: null,
+    expireAt: null,
+    finishedAt: null
+  },
+  {
+    id: 5,
+    readerId: 2,
+    readerName: '李四',
+    cardNo: 'R202301002',
+    bookId: 2,
+    bookTitle: 'JavaScript高级程序设计',
+    isbn: '978-7-111-40701-0',
+    status: 'waiting',
+    createdAt: hoursAgo(2),
+    notifiedAt: null,
+    expireAt: null,
+    finishedAt: null
+  }
+]
+
+// ========================================
+// 通知记录数据（到馆通知，失败可重试）
+// ========================================
+export const notifications = [
+  {
+    id: 1,
+    reservationId: 1,
+    readerId: 2,
+    readerName: '李四',
+    bookId: 1,
+    bookTitle: '红楼梦',
+    type: 'arrival',
+    status: 'sent',
+    retryCount: 0,
+    createdAt: '2024-01-03 10:00:00',
+    sentAt: '2024-01-03 10:00:02',
+    error: null
+  },
+  {
+    id: 2,
+    reservationId: 2,
+    readerId: 4,
+    readerName: '赵六',
+    bookId: 3,
+    bookTitle: '三国演义',
+    type: 'arrival',
+    status: 'sent',
+    retryCount: 0,
+    createdAt: '2024-01-19 09:00:00',
+    sentAt: '2024-01-19 09:00:03',
+    error: null
+  },
+  {
+    id: 3,
+    reservationId: 3,
+    readerId: 5,
+    readerName: '钱七',
+    bookId: 4,
+    bookTitle: 'Vue.js设计与实现',
+    type: 'arrival',
+    status: 'failed',
+    retryCount: 1,
+    createdAt: hoursAgo(20),
+    sentAt: null,
+    error: '网络波动，通知发送中断'
   }
 ]
 
