@@ -37,6 +37,12 @@ const routes = [
         meta: { title: '借阅管理', icon: 'SwapOutlined' }
       },
       {
+        path: 'reservations',
+        name: 'Reservations',
+        component: () => import('@/views/reservations/ReservationList.vue'),
+        meta: { title: '预约管理', icon: 'ScheduleOutlined' }
+      },
+      {
         path: 'categories',
         name: 'Categories',
         component: () => import('@/views/categories/CategoryList.vue'),

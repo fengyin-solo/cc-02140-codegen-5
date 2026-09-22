@@ -97,7 +97,7 @@ export const books = [
     categoryName: '科技工程',
     price: 89.00,
     total: 6,
-    available: 2,
+    available: 0,
     location: 'B区-02-18',
     cover: vueCover,
     description: '深入解析Vue.js框架设计原理与实现细节。'
@@ -356,5 +356,234 @@ export const users = [
     name: '图书管理员',
     role: 'librarian',
     avatar: generateAvatar('图', '#52c41a')
+  }
+]
+
+// ========================================
+// 预约与到馆通知数据
+// 说明：日期按加载时动态生成，保证种子数据在任意时间
+// 首次加载时状态（候补中/待到馆/已过期等）均有效
+// ========================================
+function dateDaysFromNow(days) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
+function dateTimeDaysFromNow(days, hour = 9, minute = 0) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  d.setUTCHours(hour, minute, 0, 0)
+  return d.toISOString()
+}
+
+// 预约状态机：waiting(候补中) -> notified(待到馆) -> fulfilled(已到馆)
+//             waiting/notified -> cancelled(已取消) / notified -> expired(已过期)
+export const reservations = [
+  // 《Vue.js设计与实现》当前无库存，王五、钱七按候补顺序排队
+  {
+    id: 1,
+    readerId: 3,
+    readerName: '王五',
+    cardNo: 'R202301003',
+    bookId: 4,
+    bookTitle: 'Vue.js设计与实现',
+    isbn: '978-7-115-52808-3',
+    status: 'waiting',
+    queueNo: 1,
+    reserveDate: dateDaysFromNow(-3),
+    createdAt: dateTimeDaysFromNow(-3, 9, 15),
+    notifiedAt: null,
+    expireDate: null,
+    fulfilledAt: null,
+    cancelledAt: null,
+    expiredAt: null,
+    cancelReason: null,
+    borrowRecordId: null
+  },
+  {
+    id: 2,
+    readerId: 5,
+    readerName: '钱七',
+    cardNo: 'R202301005',
+    bookId: 4,
+    bookTitle: 'Vue.js设计与实现',
+    isbn: '978-7-115-52808-3',
+    status: 'waiting',
+    queueNo: 2,
+    reserveDate: dateDaysFromNow(-2),
+    createdAt: dateTimeDaysFromNow(-2, 10, 40),
+    notifiedAt: null,
+    expireDate: null,
+    fulfilledAt: null,
+    cancelledAt: null,
+    expiredAt: null,
+    cancelReason: null,
+    borrowRecordId: null
+  },
+  // 李四预约的《JavaScript高级程序设计》已到货，等待到馆确认
+  {
+    id: 3,
+    readerId: 2,
+    readerName: '李四',
+    cardNo: 'R202301002',
+    bookId: 2,
+    bookTitle: 'JavaScript高级程序设计',
+    isbn: '978-7-111-40701-0',
+    status: 'notified',
+    queueNo: 1,
+    reserveDate: dateDaysFromNow(-4),
+    createdAt: dateTimeDaysFromNow(-4, 14, 5),
+    notifiedAt: dateTimeDaysFromNow(-1, 9, 30),
+    expireDate: dateDaysFromNow(2),
+    fulfilledAt: null,
+    cancelledAt: null,
+    expiredAt: null,
+    cancelReason: null,
+    borrowRecordId: null
+  },
+  // 钱七预约的《史记》已到货，但到馆通知发送失败（演示重试入口）
+  {
+    id: 4,
+    readerId: 5,
+    readerName: '钱七',
+    cardNo: 'R202301005',
+    bookId: 5,
+    bookTitle: '史记',
+    isbn: '978-7-101-14699-8',
+    status: 'notified',
+    queueNo: 2,
+    reserveDate: dateDaysFromNow(-3),
+    createdAt: dateTimeDaysFromNow(-3, 16, 20),
+    notifiedAt: dateTimeDaysFromNow(-1, 9, 31),
+    expireDate: dateDaysFromNow(2),
+    fulfilledAt: null,
+    cancelledAt: null,
+    expiredAt: null,
+    cancelReason: null,
+    borrowRecordId: null
+  },
+  // 历史记录：已到馆完成
+  {
+    id: 5,
+    readerId: 1,
+    readerName: '张三',
+    cardNo: 'R202301001',
+    bookId: 5,
+    bookTitle: '史记',
+    isbn: '978-7-101-14699-8',
+    status: 'fulfilled',
+    queueNo: 1,
+    reserveDate: dateDaysFromNow(-20),
+    createdAt: dateTimeDaysFromNow(-20, 11, 0),
+    notifiedAt: dateTimeDaysFromNow(-10, 9, 0),
+    expireDate: dateDaysFromNow(-7),
+    fulfilledAt: dateTimeDaysFromNow(-9, 15, 30),
+    cancelledAt: null,
+    expiredAt: null,
+    cancelReason: null,
+    borrowRecordId: null
+  },
+  // 历史记录：到馆通知过期未确认
+  {
+    id: 6,
+    readerId: 3,
+    readerName: '王五',
+    cardNo: 'R202301003',
+    bookId: 1,
+    bookTitle: '红楼梦',
+    isbn: '978-7-02-008179-4',
+    status: 'expired',
+    queueNo: 1,
+    reserveDate: dateDaysFromNow(-15),
+    createdAt: dateTimeDaysFromNow(-15, 10, 10),
+    notifiedAt: dateTimeDaysFromNow(-10, 9, 0),
+    expireDate: dateDaysFromNow(-7),
+    fulfilledAt: null,
+    cancelledAt: null,
+    expiredAt: dateTimeDaysFromNow(-6, 0, 5),
+    cancelReason: null,
+    borrowRecordId: null
+  },
+  // 历史记录：读者主动取消
+  {
+    id: 7,
+    readerId: 2,
+    readerName: '李四',
+    cardNo: 'R202301002',
+    bookId: 6,
+    bookTitle: '经济学原理',
+    isbn: '978-7-111-57748-4',
+    status: 'cancelled',
+    queueNo: 1,
+    reserveDate: dateDaysFromNow(-8),
+    createdAt: dateTimeDaysFromNow(-8, 13, 45),
+    notifiedAt: null,
+    expireDate: null,
+    fulfilledAt: null,
+    cancelledAt: dateTimeDaysFromNow(-5, 9, 20),
+    expiredAt: null,
+    cancelReason: '读者主动取消',
+    borrowRecordId: null
+  }
+]
+
+// 到馆通知记录：sending(发送中) -> sent(已发送) / failed(发送失败，可重试)
+export const notifications = [
+  {
+    id: 1,
+    reservationId: 3,
+    readerId: 2,
+    readerName: '李四',
+    bookId: 2,
+    bookTitle: 'JavaScript高级程序设计',
+    type: 'arrival',
+    status: 'sent',
+    retryCount: 0,
+    createdAt: dateTimeDaysFromNow(-1, 9, 30),
+    sentAt: dateTimeDaysFromNow(-1, 9, 30),
+    lastError: null
+  },
+  {
+    id: 2,
+    reservationId: 4,
+    readerId: 5,
+    readerName: '钱七',
+    bookId: 5,
+    bookTitle: '史记',
+    type: 'arrival',
+    status: 'failed',
+    retryCount: 1,
+    createdAt: dateTimeDaysFromNow(-1, 9, 31),
+    sentAt: null,
+    lastError: '通知通道中断：发送超时，请稍后重试'
+  },
+  {
+    id: 3,
+    reservationId: 5,
+    readerId: 1,
+    readerName: '张三',
+    bookId: 5,
+    bookTitle: '史记',
+    type: 'arrival',
+    status: 'sent',
+    retryCount: 0,
+    createdAt: dateTimeDaysFromNow(-10, 9, 0),
+    sentAt: dateTimeDaysFromNow(-10, 9, 0),
+    lastError: null
+  },
+  {
+    id: 4,
+    reservationId: 6,
+    readerId: 3,
+    readerName: '王五',
+    bookId: 1,
+    bookTitle: '红楼梦',
+    type: 'arrival',
+    status: 'sent',
+    retryCount: 0,
+    createdAt: dateTimeDaysFromNow(-10, 9, 0),
+    sentAt: dateTimeDaysFromNow(-10, 9, 0),
+    lastError: null
   }
 ]

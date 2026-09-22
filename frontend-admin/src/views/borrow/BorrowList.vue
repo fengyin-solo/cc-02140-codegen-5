@@ -317,10 +317,12 @@ import {
 import { useBorrowStore } from '@/stores/borrow'
 import { useReaderStore } from '@/stores/reader'
 import { useBookStore } from '@/stores/book'
+import { useReservationStore } from '@/stores/reservation'
 
 const borrowStore = useBorrowStore()
 const readerStore = useReaderStore()
 const bookStore = useBookStore()
+const reservationStore = useReservationStore()
 
 const loading = ref(false)
 const searchKeyword = ref('')
@@ -560,6 +562,12 @@ function handleReturn(record) {
   }
 
   message.success('归还成功')
+
+  // 库存释放后联动预约队列：按候补顺序为队首读者生成到馆通知
+  const notified = reservationStore.processQueue(record.bookId)
+  if (notified > 0) {
+    message.info(`该书有读者候补，已为 ${notified} 位读者生成到馆通知`)
+  }
 }
 
 function handleRenew(record) {

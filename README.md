@@ -90,6 +90,7 @@ docker pull --platform linux/arm64 nginx:1.25-alpine
         │   ├── book.js         # 图书状态
         │   ├── reader.js       # 读者状态
         │   ├── borrow.js       # 借阅状态
+        │   ├── reservation.js  # 预约排队与到馆状态
         │   └── category.js     # 分类状态
         ├── layouts/            # 布局组件
         │   └── MainLayout.vue  # 主布局
@@ -102,6 +103,8 @@ docker pull --platform linux/arm64 nginx:1.25-alpine
         │   │   └── ReaderList.vue    # 读者管理
         │   ├── borrow/
         │   │   └── BorrowList.vue    # 借阅管理
+        │   ├── reservations/
+        │   │   └── ReservationList.vue # 预约管理
         │   └── categories/
         │       └── CategoryList.vue  # 分类管理
         ├── data/               # 模拟数据
@@ -150,10 +153,20 @@ docker pull --platform linux/arm64 nginx:1.25-alpine
 - 借阅记录列表
 - 借阅统计
 - 新增借阅
-- 图书归还
+- 图书归还（归还释放库存后自动联动预约队列，按候补顺序生成到馆通知）
 - 续借功能
 
-### 5. 分类管理 (Categories)
+### 5. 预约管理 (Reservations)
+- 无库存馆藏条目预约登记（有库存时提示直接借阅）
+- 重复预约拦截：同一读者对同一图书仅允许一条进行中的预约
+- 候补队列：按登记顺序排位，库存释放后按序生成到馆通知并预扣库存
+- 到馆确认：确认后自动转为借阅记录，重复确认幂等
+- 取消预约：待到馆预约取消后库存自动顺延给下一位候补
+- 过期处理：到馆通知保留 3 天，逾期自动过期并顺延库存
+- 通知记录：到馆通知发送状态跟踪，支持模拟通道中断与失败重试
+- 状态持久化：刷新/重新进入后自动校正过期预约与库存分配，队列顺序不错位
+
+### 6. 分类管理 (Categories)
 - 分类卡片展示
 - 新增/编辑/删除分类
 
